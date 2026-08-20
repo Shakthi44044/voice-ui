@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Navigation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --purple-700:#4B3CBF;
+    --purple-600:#5B4CD6;
+    --purple-500:#6E60E3;
+    --purple-400:#8A7EEB;
+    --purple-100:#ECE8FC;
+    --purple-050:#F5F3FE;
+    --ink-900:#1C1F2E;
+    --ink-500:#6B7180;
+    --ink-300:#B9BDCB;
+    --line:#E7E5F5;
+    --white:#FFFFFF;
+    --success:#25B172;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:40px 20px;
+    font-family:'Inter',system-ui,sans-serif;
+    background:
+      radial-gradient(circle at 18% 12%, #E7E2FC 0%, transparent 45%),
+      radial-gradient(circle at 85% 88%, #E2E8FF 0%, transparent 40%),
+      var(--purple-050);
+    color:var(--ink-900);
+  }
+
+  .stage{
+    width:100%;
+    max-width:380px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+  }
+
+  .card{
+    position:relative;
+    width:100%;
+    background:var(--white);
+    border-radius:26px;
+    box-shadow:0 24px 60px -20px rgba(75,60,191,0.35), 0 2px 8px rgba(28,31,46,0.04);
+    padding:22px 22px 26px;
+    overflow:hidden;
+    min-height:392px;
+  }
+
+  .card::before{
+    content:"";
+    position:absolute;
+    inset:0 0 auto 0;
+    height:4px;
+    background:linear-gradient(90deg,var(--purple-500),var(--purple-400) 60%,var(--purple-100));
+  }
+
+  .card-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:4px;
+  }
+
+  .card-title{
+    font-family:'Sora',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    letter-spacing:0.01em;
+    color:var(--ink-900);
+  }
+
+  .close-btn{
+    width:30px;
+    height:30px;
+    border-radius:10px;
+    border:none;
+    background:transparent;
+    color:var(--ink-500);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .close-btn:hover{background:var(--purple-050); color:var(--ink-900);}
+  .close-btn:focus-visible{outline:2px solid var(--purple-500); outline-offset:2px;}
+
+  /* ---------- panel swap ---------- */
+  .panel{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    animation:panel-in .32s cubic-bezier(.2,.7,.3,1);
+  }
+  @keyframes panel-in{
+    from{opacity:0; transform:translateY(6px) scale(.98);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+  .panel[hidden]{display:none;}
+
+  /* ---------- idle state ---------- */
+  .idle-avatar{
+    position:relative;
+    width:72px;
+    height:72px;
+    border-radius:50%;
+    margin:16px 0 16px;
+    background:linear-gradient(160deg,var(--purple-500),var(--purple-700));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 10px 22px -8px rgba(91,76,214,.6);
+    cursor:pointer;
+    border:none;
+    padding:0;
+  }
+  .idle-avatar::after{
+    content:"";
+    position:absolute;
+    inset:-6px;
+    border-radius:50%;
+    border:1.5px solid var(--purple-400);
+    opacity:.5;
+    animation:invite-pulse 2.4s ease-out infinite;
+  }
+  @keyframes invite-pulse{
+    0%{transform:scale(.9); opacity:.55;}
+    100%{transform:scale(1.35); opacity:0;}
+  }
+  .idle-avatar:focus-visible{outline:2px solid var(--purple-700); outline-offset:3px;}
+  .idle-avatar svg{width:28px; height:28px;}
+
+  .heading{
+    font-family:'Sora',sans-serif;
+    font-weight:600;
+    font-size:19px;
+    margin:0 0 18px;
+    color:var(--ink-900);
+  }
+
+  .try-label{
+    align-self:flex-start;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-500);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    margin-bottom:10px;
+  }
+
+  .chip-grid{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+    margin-bottom:9px;
+  }
+
+  .chip{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    padding:10px 11px;
+    background:var(--purple-050);
+    border:1px solid var(--line);
+    border-radius:12px;
+    font-size:12.5px;
+    font-weight:500;
+    color:var(--ink-900);
+    text-align:left;
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease, transform .1s ease;
+    line-height:1.25;
+  }
+  .chip:hover{background:var(--purple-100); border-color:var(--purple-400);}
+  .chip:active{transform:scale(.97);}
+  .chip:focus-visible{outline:2px solid var(--purple-500); outline-offset:2px;}
+  .chip svg{width:15px; height:15px; flex-shrink:0; color:var(--purple-600);}
+
+  .chip-help{
+    grid-column:1 / -1;
+    justify-content:center;
+    color:var(--ink-500);
+    background:transparent;
+    border-style:dashed;
+  }
+  .chip-help:hover{color:var(--ink-900); background:var(--purple-050);}
+
+  /* ---------- listening state ---------- */
+  .sonar{
+    position:relative;
+    width:150px;
+    height:150px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:18px 0 20px;
+  }
+  .sonar-ring{
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    background:var(--purple-400);
+    opacity:0;
+    animation:sonar-pulse 2.1s ease-out infinite;
+  }
+  .sonar-ring.r2{animation-delay:.7s;}
+  .sonar-ring.r3{animation-delay:1.4s;}
+  @keyframes sonar-pulse{
+    0%{transform:scale(.42); opacity:.45;}
+    100%{transform:scale(1); opacity:0;}
+  }
+
+  .mic-core{
+    position:relative;
+    width:74px;
+    height:74px;
+    border-radius:50%;
+    background:linear-gradient(160deg,var(--purple-500),var(--purple-700));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 14px 30px -10px rgba(75,60,191,.7);
+    z-index:2;
+  }
+  .mic-core svg{width:30px; height:30px;}
+
+  .wave-bars{
+    display:flex;
+    align-items:flex-end;
+    gap:4px;
+    height:16px;
+    margin-bottom:6px;
+  }
+  .wave-bars span{
+    width:3px;
+    border-radius:2px;
+    background:var(--purple-500);
+    animation:wave-bounce 1s ease-in-out infinite;
+  }
+  .wave-bars span:nth-child(1){animation-delay:0s;}
+  .wave-bars span:nth-child(2){animation-delay:.12s;}
+  .wave-bars span:nth-child(3){animation-delay:.24s;}
+  .wave-bars span:nth-child(4){animation-delay:.36s;}
+  .wave-bars span:nth-child(5){animation-delay:.48s;}
+  @keyframes wave-bounce{
+    0%,100%{height:5px;}
+    50%{height:16px;}
+  }
+
+  .sub-text{
+    font-size:13.5px;
+    color:var(--ink-500);
+    margin:2px 0 22px;
+  }
+
+  .cancel-btn{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    padding:10px 20px;
+    border-radius:999px;
+    border:1.5px solid var(--line);
+    background:var(--white);
+    color:var(--ink-900);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .cancel-btn:hover{border-color:var(--ink-300); background:var(--purple-050);}
+  .cancel-btn:focus-visible{outline:2px solid var(--purple-500); outline-offset:2px;}
+  .cancel-btn svg{width:14px; height:14px;}
+
+  /* ---------- result state ---------- */
+  .result-check{
+    width:64px;
+    height:64px;
+    border-radius:50%;
+    background:#E8F9F1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:22px 0 18px;
+    animation:check-pop .4s cubic-bezier(.3,1.4,.4,1);
+  }
+  @keyframes check-pop{
+    0%{transform:scale(.4); opacity:0;}
+    100%{transform:scale(1); opacity:1;}
+  }
+  .result-check svg{width:30px; height:30px; color:var(--success);}
+
+  .result-command{
+    font-family:'Sora',sans-serif;
+    font-weight:600;
+    font-size:16px;
+    margin:0 0 6px;
+    color:var(--ink-900);
+  }
+  .result-sub{
+    font-size:13px;
+    color:var(--ink-500);
+    margin-bottom:24px;
+  }
+
+  .caption{
+    font-size:12.5px;
+    color:var(--ink-500);
+    text-align:center;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .sonar-ring, .wave-bars span, .panel, .idle-avatar::after{animation:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="card" id="card">
+
+    <!-- IDLE -->
+    <div class="panel" id="panel-idle">
+      <div class="card-header">
+        <span class="card-title">Voice Navigation</span>
+        <button class="close-btn" id="closeIdle" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <button class="idle-avatar" id="micAvatar" aria-label="Start voice navigation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/>
+          <path d="M19 11a7 7 0 0 1-14 0M12 18v3"/>
+        </svg>
+      </button>
+
+      <h2 class="heading">How can I help you?</h2>
+
+      <span class="try-label">Try saying</span>
+      <div class="chip-grid" id="chipGrid">
+        <button class="chip" data-command="Show my Aadhaar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="12" r="2"/><path d="M15 10h3M15 14h3"/></svg>
+          Show my Aadhaar
+        </button>
+        <button class="chip" data-command="Search Driving Licence">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          Search Driving Licence
+        </button>
+        <button class="chip" data-command="Go to Issued Documents">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+          Go to Issued Documents
+        </button>
+        <button class="chip" data-command="Download my PAN card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          Download my PAN card
+        </button>
+        <button class="chip chip-help" data-command="Help">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 1.5-2.5 3.5"/><path d="M12 17h.01"/></svg>
+          Help
+        </button>
+      </div>
+    </div>
+
+    <!-- LISTENING -->
+    <div class="panel" id="panel-listening" hidden>
+      <div class="card-header">
+        <span class="card-title">Voice Navigation</span>
+        <button class="close-btn" id="closeListening" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="sonar">
+        <div class="sonar-ring r1"></div>
+        <div class="sonar-ring r2"></div>
+        <div class="sonar-ring r3"></div>
+        <div class="mic-core">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/>
+            <path d="M19 11a7 7 0 0 1-14 0M12 18v3"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="wave-bars" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <h2 class="heading" style="margin-bottom:2px;">Listening...</h2>
+      <p class="sub-text" id="listeningSub">Please say a command</p>
+
+      <button class="cancel-btn" id="cancelBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        Cancel
+      </button>
+    </div>
+
+    <!-- RESULT -->
+    <div class="panel" id="panel-result" hidden>
+      <div class="card-header">
+        <span class="card-title">Voice Navigation</span>
+        <button class="close-btn" id="closeResult" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="result-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </div>
+      <p class="result-command" id="resultCommand">Opening Aadhaar</p>
+      <p class="result-sub">Command recognized</p>
+    </div>
+
+  </div>
+
+  <p class="caption">Tap the mic, or tap a suggestion to try it instantly.</p>
+</div>
+
+<script>
+  const panelIdle = document.getElementById('panel-idle');
+  const panelListening = document.getElementById('panel-listening');
+  const panelResult = document.getElementById('panel-result');
+  const listeningSub = document.getElementById('listeningSub');
+  const resultCommand = document.getElementById('resultCommand');
+
+  const actionLabels = {
+    "Show my Aadhaar": "Opening Aadhaar",
+    "Search Driving Licence": "Searching Driving Licence",
+    "Go to Issued Documents": "Opening Issued Documents",
+    "Download my PAN card": "Downloading PAN card",
+    "Help": "Opening Help"
+  };
+
+  let pendingTimer = null;
+
+  function showPanel(panel){
+    [panelIdle, panelListening, panelResult].forEach(p => p.hidden = true);
+    panel.hidden = false;
+  }
+
+  function finishRecognition(heardText){
+    const matched = matchCommand(heardText);
+    resultCommand.textContent = matched ? actionLabels[matched]
+      : (heardText ? `Didn't recognize: "${heardText}"` : 'Command recognized');
+    showPanel(panelResult);
+    pendingTimer = setTimeout(() => showPanel(panelIdle), 1600);
+  }
+
+  // Matches free-form speech against the known command list.
+  function matchCommand(text){
+    if (!text) return null;
+    const lower = text.toLowerCase();
+    return Object.keys(actionLabels).find(cmd => {
+      const key = cmd.toLowerCase();
+      return lower.includes(key) || key.includes(lower);
+    }) || null;
+  }
+
+  // ---- Web Speech API setup ----
+  const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognizer = null;
+  if (SpeechRecognitionAPI) {
+    recognizer = new SpeechRecognitionAPI();
+    recognizer.lang = 'en-IN';
+    recognizer.interimResults = false;
+    recognizer.maxAlternatives = 1;
+
+    recognizer.onresult = (event) => {
+      const heard = event.results[0][0].transcript;
+      finishRecognition(heard);
+    };
+    recognizer.onerror = (event) => {
+      listeningSub.textContent = event.error === 'not-allowed'
+        ? 'Microphone access denied'
+        : "Didn't catch that — tap to retry";
+      pendingTimer = setTimeout(() => showPanel(panelIdle), 1800);
+    };
+    recognizer.onspeechend = () => recognizer.stop();
+  }
+
+  function startListening(command){
+    clearTimeout(pendingTimer);
+
+    // Chip tap = simulated shortcut, no real audio involved.
+    if (command){
+      listeningSub.textContent = `Heard: "${command}"`;
+      showPanel(panelListening);
+      pendingTimer = setTimeout(() => finishRecognition(command), 700);
+      return;
+    }
+
+    // Mic tap = real listening when the browser supports it.
+    listeningSub.textContent = 'Please say a command';
+    showPanel(panelListening);
+
+    if (recognizer){
+      try {
+        recognizer.start();
+      } catch (err) {
+        // start() throws if called while already running
+      }
+    } else {
+      // No browser support — fall back to the simulated demo flow.
+      pendingTimer = setTimeout(() => finishRecognition(null), 2200);
+    }
+  }
+
+  document.getElementById('micAvatar').addEventListener('click', () => startListening(null));
+
+  document.getElementById('chipGrid').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    startListening(chip.dataset.command);
+  });
+
+  document.getElementById('cancelBtn').addEventListener('click', () => {
+    clearTimeout(pendingTimer);
+    if (recognizer) { try { recognizer.stop(); } catch (err) {} }
+    showPanel(panelIdle);
+  });
+
+  [document.getElementById('closeIdle'), document.getElementById('closeListening'), document.getElementById('closeResult')]
+    .forEach(btn => btn.addEventListener('click', () => {
+      clearTimeout(pendingTimer);
+      if (recognizer) { try { recognizer.stop(); } catch (err) {} }
+      showPanel(panelIdle);
+    }));
+</script>
+
+</body>
+</html>
