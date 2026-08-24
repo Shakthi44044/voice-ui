@@ -43,8 +43,7 @@ let recognizer = null;
 let isListening = false;
 let micPermission = 'unknown'; // 'granted' | 'denied' | 'prompt' | 'unknown'
 
-// Check current mic permission without ever triggering a prompt ourselves —
-// only recognizer.start() should ever do that, and only once per grant.
+
 if (navigator.permissions && navigator.permissions.query) {
   navigator.permissions.query({ name: 'microphone' })
     .then((status) => {
@@ -89,8 +88,7 @@ function startListening(command){
     return;
   }
 
-  // Already blocked — don't call start() again, that just re-triggers the
-  // same denied prompt/error loop in some browsers.
+ 
   if (micPermission === 'denied') {
     listeningSub.textContent = 'Mic blocked — allow it in your browser\'s site settings';
     showPanel(panelListening);
@@ -98,8 +96,7 @@ function startListening(command){
     return;
   }
 
-  // A session is already active — never call start() twice, that's what
-  // causes some browsers to throw and re-prompt.
+
   if (recognizer && isListening) return;
 
   listeningSub.textContent = 'Please say a command';
