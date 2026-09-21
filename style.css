@@ -85,7 +85,6 @@
 .border-1-5px { border: 1.5px solid var(--line); }
 .border-dashed { border-style: dashed; }
 
-
 .text-white { color: var(--white); }
 .text-ink-900 { color: var(--ink-900); }
 .text-ink-500 { color: var(--ink-500); }
@@ -93,8 +92,6 @@
 .text-purple-600 { color: var(--purple-600); }
 .text-success { color: var(--success); }
 
-
-.bg-white { background: var(--white); }
 .bg-purple-050 { background: var(--purple-050); }
 .bg-purple-100 { background: var(--purple-100); }
 .bg-purple-400 { background: var(--purple-400); }
@@ -198,43 +195,3 @@ body { margin: 0; display: flex; align-items: center; justify-content: center; f
 @media (prefers-reduced-motion: reduce) {
   .sonar-ring, .wave-bars span, .panel, .idle-avatar::after { animation: none !important; }
 }
-
-
-
-/* gets  used 2 or more times 
-flex
-flex-col
-items-center
-text-center
-w-full
-bg-white
-rounded-26px
-font-weight-600
-font-12-5px
-font-weight-500
-text-ink-500
-text-ink-900
-grid
-grid-cols-2
-gap-9px
-gap-7px
-p-11px
-border-1px
-rounded-12px
-cursor-pointer
-transition-all
-line-height-1-25
-w-15px
-h-15px
-shrink-0
-text-purple-600
-relative
-absolute
-rounded-full
-bg-purple-400
-inset-0
-bg-gradient-purple
-flex-center
-bg-purple-500
-rounded-2px
-font-600-19px */
