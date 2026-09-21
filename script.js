@@ -3,7 +3,7 @@ const panelListening = document.getElementById('panel-listening');
 const panelResult = document.getElementById('panel-result');
 const listeningSub = document.getElementById('listeningSub');
 const resultCommand = document.getElementById('resultCommand');
-
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 const actionLabels = {
   "Show my Aadhaar": "Opening Aadhaar",
   "Search Driving Licence": "Searching Driving Licence",
@@ -36,12 +36,9 @@ function matchCommand(text){
     return lower.includes(key) || key.includes(lower);
   }) || null;
 }
-
-// ---- Web Speech API setup ----
-const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognizer = null;
 let isListening = false;
-let micPermission = 'unknown'; // 'granted' | 'denied' | 'prompt' | 'unknown'
+let micPermission = 'unknown'; 
 
 
 if (navigator.permissions && navigator.permissions.query) {
@@ -114,23 +111,39 @@ function startListening(command){
   }
 }
 
-document.getElementById('micAvatar').addEventListener('click', () => startListening(null));
+const micAvatar = document.getElementById('micAvatar');
+const chipGrid = document.getElementById('chipGrid');
+const cancelBtn = document.getElementById('cancelBtn');
+const closeButtons = [
+  document.getElementById('closeIdle'),
+  document.getElementById('closeListening'),
+  document.getElementById('closeResult')
+].filter(Boolean);
 
-document.getElementById('chipGrid').addEventListener('click', (e) => {
-  const chip = e.target.closest('.chip');
-  if (!chip) return;
-  startListening(chip.dataset.command);
-});
+if (micAvatar) {
+  micAvatar.addEventListener('click', () => startListening(null));
+}
 
-document.getElementById('cancelBtn').addEventListener('click', () => {
-  clearTimeout(pendingTimer);
-  if (recognizer) { try { recognizer.stop(); } catch (err) {} }
-  showPanel(panelIdle);
-});
+if (chipGrid) {
+  chipGrid.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    startListening(chip.dataset.command);
+  });
+}
 
-[document.getElementById('closeIdle'), document.getElementById('closeListening'), document.getElementById('closeResult')]
-  .forEach(btn => btn.addEventListener('click', () => {
+if (cancelBtn) {
+  cancelBtn.addEventListener('click', () => {
     clearTimeout(pendingTimer);
     if (recognizer) { try { recognizer.stop(); } catch (err) {} }
     showPanel(panelIdle);
-  }));
+  });
+}
+
+closeButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    clearTimeout(pendingTimer);
+    if (recognizer) { try { recognizer.stop(); } catch (err) {} }
+    showPanel(panelIdle);
+  });
+});
