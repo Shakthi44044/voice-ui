@@ -1,0 +1,149 @@
+const panelIdle = document.getElementById('panel-idle');
+const panelListening = document.getElementById('panel-listening');
+const panelResult = document.getElementById('panel-result');
+const listeningSub = document.getElementById('listeningSub');
+const resultCommand = document.getElementById('resultCommand');
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+const actionLabels = {
+  "Show my Aadhaar": "Opening Aadhaar",
+  "Search Driving Licence": "Searching Driving Licence",
+  "Go to Issued Documents": "Opening Issued Documents",
+  "Download my PAN card": "Downloading PAN card",
+  "Help": "Opening Help"
+};
+
+let pendingTimer = null;
+
+function showPanel(panel){
+  [panelIdle, panelListening, panelResult].forEach(p => p.hidden = true);
+  panel.hidden = false;
+}
+
+function finishRecognition(heardText){
+  const matched = matchCommand(heardText);
+  resultCommand.textContent = matched ? actionLabels[matched]
+    : (heardText ? `Didn't recognize: "${heardText}"` : 'Command recognized');
+  showPanel(panelResult);
+  pendingTimer = setTimeout(() => showPanel(panelIdle), 1600);
+}
+
+// Matches free-form speech against the known command list.
+function matchCommand(text){
+  if (!text) return null;
+  const lower = text.toLowerCase();
+  return Object.keys(actionLabels).find(cmd => {
+    const key = cmd.toLowerCase();
+    return lower.includes(key) || key.includes(lower);
+  }) || null;
+}
+let recognizer = null;
+let isListening = false;
+let micPermission = 'unknown'; 
+
+
+if (navigator.permissions && navigator.permissions.query) {
+  navigator.permissions.query({ name: 'microphone' })
+    .then((status) => {
+      micPermission = status.state;
+      status.onchange = () => { micPermission = status.state; };
+    })
+    .catch(() => { /* not supported in this browser — fine, we just won't pre-check */ });
+}
+
+if (SpeechRecognitionAPI) {
+  recognizer = new SpeechRecognitionAPI();
+  recognizer.lang = 'en-IN';
+  recognizer.interimResults = false;
+  recognizer.maxAlternatives = 1;
+
+  recognizer.onresult = (event) => {
+    const heard = event.results[0][0].transcript;
+    finishRecognition(heard);
+  };
+  recognizer.onerror = (event) => {
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      micPermission = 'denied';
+    }
+    listeningSub.textContent = micPermission === 'denied'
+      ? 'Microphone access denied'
+      : "Didn't catch that — tap to retry";
+    pendingTimer = setTimeout(() => showPanel(panelIdle), 1800);
+  };
+  recognizer.onstart = () => { isListening = true; };
+  recognizer.onend = () => { isListening = false; };
+  recognizer.onspeechend = () => recognizer.stop();
+}
+
+function startListening(command){
+  clearTimeout(pendingTimer);
+
+  // Chip tap = simulated shortcut, no real audio involved.
+  if (command){
+    listeningSub.textContent = `Heard: "${command}"`;
+    showPanel(panelListening);
+    pendingTimer = setTimeout(() => finishRecognition(command), 700);
+    return;
+  }
+
+ 
+  if (micPermission === 'denied') {
+    listeningSub.textContent = 'Mic blocked — allow it in your browser\'s site settings';
+    showPanel(panelListening);
+    pendingTimer = setTimeout(() => showPanel(panelIdle), 2200);
+    return;
+  }
+
+
+  if (recognizer && isListening) return;
+
+  listeningSub.textContent = 'Please say a command';
+  showPanel(panelListening);
+
+  if (recognizer){
+    try {
+      recognizer.start();
+    } catch (err) {
+      // start() throws if called while already running — ignore, isListening guards this anyway
+    }
+  } else {
+    // No browser support — fall back to the simulated demo flow.
+    pendingTimer = setTimeout(() => finishRecognition(null), 2200);
+  }
+}
+
+const micAvatar = document.getElementById('micAvatar');
+const chipGrid = document.getElementById('chipGrid');
+const cancelBtn = document.getElementById('cancelBtn');
+const closeButtons = [
+  document.getElementById('closeIdle'),
+  document.getElementById('closeListening'),
+  document.getElementById('closeResult')
+].filter(Boolean);
+
+if (micAvatar) {
+  micAvatar.addEventListener('click', () => startListening(null));
+}
+
+if (chipGrid) {
+  chipGrid.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    startListening(chip.dataset.command);
+  });
+}
+
+if (cancelBtn) {
+  cancelBtn.addEventListener('click', () => {
+    clearTimeout(pendingTimer);
+    if (recognizer) { try { recognizer.stop(); } catch (err) {} }
+    showPanel(panelIdle);
+  });
+}
+
+closeButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    clearTimeout(pendingTimer);
+    if (recognizer) { try { recognizer.stop(); } catch (err) {} }
+    showPanel(panelIdle);
+  });
+});
