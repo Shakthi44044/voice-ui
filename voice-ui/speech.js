@@ -1,4 +1,4 @@
-const SpeechRecognitionAPI =
+﻿const SpeechRecognitionAPI =
   window.SpeechRecognition ||
   window.webkitSpeechRecognition;
 
@@ -6,7 +6,10 @@ let recognizer = null;
 let isListening = false;
 let micPermission = "unknown";
 
-
+window.onSpeechStart = window.onSpeechStart || (() => {});
+window.onSpeechResult = window.onSpeechResult || (() => {});
+window.onSpeechError = window.onSpeechError || (() => {});
+window.onSpeechEnd = window.onSpeechEnd || (() => {});
 
 if (navigator.permissions && navigator.permissions.query) {
   navigator.permissions
@@ -23,7 +26,6 @@ if (navigator.permissions && navigator.permissions.query) {
     });
 }
 
-
 if (SpeechRecognitionAPI) {
   recognizer = new SpeechRecognitionAPI();
 
@@ -33,44 +35,27 @@ if (SpeechRecognitionAPI) {
 
   recognizer.onstart = () => {
     isListening = true;
-
-    if (window.onSpeechStart) {
-      window.onSpeechStart();
-    }
+    window.onSpeechStart();
   };
 
   recognizer.onresult = (event) => {
-    const heardText =
-      event.results[0][0].transcript;
-
-    if (window.onSpeechResult) {
-      window.onSpeechResult(heardText);
+    const transcript = event.results?.[0]?.[0]?.transcript || "";
+    if (transcript) {
+      window.onSpeechResult(transcript.trim());
     }
   };
 
   recognizer.onerror = (event) => {
-
-    if (
-      event.error === "not-allowed" ||
-      event.error === "service-not-allowed"
-    ) {
+    if (event.error === "not-allowed" || event.error === "service-not-allowed") {
       micPermission = "denied";
     }
 
-    if (window.onSpeechError) {
-      window.onSpeechError(
-        event.error,
-        micPermission
-      );
-    }
+    window.onSpeechError(event.error, micPermission);
   };
 
   recognizer.onend = () => {
     isListening = false;
-
-    if (window.onSpeechEnd) {
-      window.onSpeechEnd();
-    }
+    window.onSpeechEnd();
   };
 
   recognizer.onspeechend = () => {
@@ -82,29 +67,14 @@ if (SpeechRecognitionAPI) {
   };
 }
 
-
 function startSpeechRecognition() {
-
   if (micPermission === "denied") {
-    if (window.onSpeechError) {
-      window.onSpeechError(
-        "not-allowed",
-        "denied"
-      );
-    }
-
+    window.onSpeechError("not-allowed", "denied");
     return;
   }
 
   if (!recognizer) {
-
-    if (window.onSpeechError) {
-      window.onSpeechError(
-        "not-supported",
-        micPermission
-      );
-    }
-
+    window.onSpeechError("not-supported", micPermission);
     return;
   }
 
@@ -115,17 +85,12 @@ function startSpeechRecognition() {
   try {
     recognizer.start();
   } catch (error) {
-    // Prevent start() from crashing the application
     console.log("Speech start error:", error);
   }
 }
 
-
 function stopSpeechRecognition() {
-
-  if (!recognizer) {
-    return;
-  }
+  if (!recognizer) return;
 
   try {
     recognizer.stop();
@@ -134,12 +99,8 @@ function stopSpeechRecognition() {
   }
 }
 
-
 function abortSpeechRecognition() {
-
-  if (!recognizer) {
-    return;
-  }
+  if (!recognizer) return;
 
   try {
     recognizer.abort();
@@ -150,7 +111,6 @@ function abortSpeechRecognition() {
   isListening = false;
 }
 
-
 function getMicPermission() {
   return micPermission;
 }
@@ -158,4 +118,3 @@ function getMicPermission() {
 function isSpeechSupported() {
   return recognizer !== null;
 }
-

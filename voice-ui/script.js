@@ -13,8 +13,7 @@ const ui = {
   chipGrid: document.getElementById('chipGrid'),
   cancelBtn: document.getElementById('cancelBtn'),
   retryBtn: document.getElementById('retryBtn'),
-  continueBtn: document.getElementById('continueBtn'),
-  closeButtons: [...document.querySelectorAll('.close-btn')]
+  continueBtn: document.getElementById('continueBtn')
 };
 
 const actions = {
@@ -27,7 +26,6 @@ const actions = {
 
 let timer = null;
 let lastHeardText = null;
-let recognition = null;
 const resultDisplayTime = 5000;
 
 const showPanel = (panel) => {
@@ -71,38 +69,43 @@ const startListening = (preset) => {
 
   ui.listeningSub.textContent = 'Please say a command';
   showPanel(document.getElementById('panel-listening'));
+  startSpeechRecognition();
+};
 
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    timer = setTimeout(() => {
+const bindSpeechCallbacks = () => {
+  window.onSpeechStart = () => {
+    ui.listeningSub.textContent = 'Please say a command';
+    showPanel(document.getElementById('panel-listening'));
+  };
+
+  window.onSpeechResult = (text) => {
+    const transcript = (text || '').trim();
+    if (!transcript) return;
+    lastHeardText = transcript;
+    ui.verifyText.textContent = transcript;
+    showPanel(document.getElementById('panel-verification'));
+  };
+
+  window.onSpeechError = (error, permissionState) => {
+    const isDenied = error === 'not-allowed' || error === 'service-not-allowed' || permissionState === 'denied';
+
+    if (error === 'not-supported') {
       lastHeardText = 'Show my Aadhaar';
       ui.verifyText.textContent = lastHeardText;
       showPanel(document.getElementById('panel-verification'));
-    }, 1800);
-    return;
-  }
+      return;
+    }
 
-  if (!recognition) {
-    recognition = new SpeechRecognition();
-    recognition.lang = 'en-IN';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognition.onresult = (event) => {
-      const text = event.results[0][0].transcript;
-      lastHeardText = text;
-      ui.verifyText.textContent = text;
-      showPanel(document.getElementById('panel-verification'));
-    };
-    recognition.onerror = (event) => {
-      ui.listeningSub.textContent = event.error === 'not-allowed' || event.error === 'service-not-allowed'
-        ? 'Microphone access denied'
-        : "Didn't catch that  tap to retry";
-      timer = setTimeout(() => showPanel(document.getElementById('panel-idle')), 1800);
-    };
-  }
+    ui.listeningSub.textContent = isDenied ? 'Microphone access denied' : "Didn't catch that — tap to retry";
+    timer = setTimeout(() => showPanel(document.getElementById('panel-idle')), 1800);
+  };
 
-  try { recognition.start(); } catch {}
+  window.onSpeechEnd = () => {
+    // no-op; UI state is handled by result/verification steps
+  };
 };
+
+window.addEventListener('load', bindSpeechCallbacks);
 
 if (ui.micAvatar) ui.micAvatar.addEventListener('click', () => startListening(null));
 if (ui.chipGrid) ui.chipGrid.addEventListener('click', (event) => {
@@ -113,14 +116,14 @@ if (ui.chipGrid) ui.chipGrid.addEventListener('click', (event) => {
 
 if (ui.cancelBtn) ui.cancelBtn.addEventListener('click', () => {
   clearTimeout(timer);
-  if (recognition) recognition.stop();
+  stopSpeechRecognition();
   showPanel(document.getElementById('panel-idle'));
 });
 
 document.querySelectorAll('.close-btn').forEach((button) => {
   button.addEventListener('click', () => {
     clearTimeout(timer);
-    if (recognition) recognition.stop();
+    stopSpeechRecognition();
     showPanel(document.getElementById('panel-idle'));
   });
 });
