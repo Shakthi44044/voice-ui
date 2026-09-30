@@ -32,26 +32,45 @@ const showPanel = (panel) => {
   panels.forEach((item) => item && (item.hidden = item !== panel));
 };
 
+const keywords = {
+  'Show my Aadhaar':        ['aadhaar', 'aadhar', 'adhar'],
+  'Search Driving Licence': ['driving', 'licence', 'license'],
+  'Go to Issued Documents': ['issued', 'documents'],
+  'Download my PAN card':   ['pan'],
+  'Help':                   ['help']
+};
+
 const matchCommand = (text) => {
   if (!text) return null;
-  const query = text.toLowerCase();
-  return Object.keys(actions).find((cmd) => {
-    const command = cmd.toLowerCase();
-    return query.includes(command) || command.includes(query);
-  }) || null;
+  const words = text.toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/);
+  return Object.keys(keywords).find((cmd) => keywords[cmd].some((k) => words.includes(k))) || null;
 };
 
 const showResult = (text) => {
+  const panel = document.getElementById('panel-result');
   const match = matchCommand(text);
+  panel.classList.toggle('is-error', !match);
   ui.resultCommand.textContent = match
-    ? actions[match]
-    : text
-      ? `Didn't recognize: "${text}"`
-      : 'Command recognized';
-
-  showPanel(document.getElementById('panel-result'));
+    ? actions[match].replace(' ', '\n')
+    : "Sorry, I didn't\nrecognise that";
+  showPanel(panel);
+  clearTimeout(timer);
   timer = setTimeout(() => showPanel(document.getElementById('panel-idle')), resultDisplayTime);
 };
+
+const buildWaveform = () => {
+  const wf = document.querySelector('.waveform');
+  if (!wf) return;
+  wf.innerHTML = '';
+  for (let i = 0; i < 44; i++) {
+    const bar = document.createElement('span');
+    bar.className = 'wave-bar';
+    bar.style.height = (10 + Math.abs(Math.sin(i * 0.55) * Math.cos(i * 0.21)) * 38) + 'px';
+    bar.style.setProperty('--delay', (i * 0.05) + 's');
+    wf.appendChild(bar);
+  }
+};
+buildWaveform();
 
 const startListening = (preset) => {
   clearTimeout(timer);
@@ -79,7 +98,7 @@ const bindSpeechCallbacks = () => {
   };
 
   window.onSpeechResult = (text) => {
-    const transcript = (text || '').trim();
+    const transcript = (text || '').trim().replace(/[.!?,]+$/, '');
     if (!transcript) return;
     lastHeardText = transcript;
     ui.verifyText.textContent = transcript;
