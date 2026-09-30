@@ -50,7 +50,6 @@ transition: transform 0.15s ease,box-shadow 0.15s ease;}
 .bg-purple-400 { background: var(--purple-400); }
 .bg-purple-600 { background: var(--purple-600); color: var(--purple-600);}
 .bg-gradient-purple { background: linear-gradient(160deg, var(--purple-500), var(--purple-700)); }
-/* .bg-gradient-top-purple { background: linear-gradient(90deg, var(--purple-500), var(--purple-400) 60%, var(--purple-100)); } */
 .bg-transparent { background: transparent; }
 .font-12-5px { font-size: 12.5px; }
 .font-13px { font-size: 13px; }
@@ -67,7 +66,7 @@ transition: transform 0.15s ease,box-shadow 0.15s ease;}
 .try-label { display: block; width: 100%; text-align: left; }
 .transition-all { transition: background .15s ease, border-color .15s ease, transform .1s ease; }
 .transition-btn { transition: border-color .15s ease, background .15s ease; }
-.animate-bounce { animation: bounce 0.6s ease-in-out infinite; }
+.animate-bounce { animation: 0.6s ease-in-out infinite; }
 .shrink-0 { flex-shrink: 0; }
 body { margin: 0; display: flex; align-items: center; justify-content: center; font-family: 'Inter', system-ui, sans-serif; }
 .panel { animation: panel-in .32s cubic-bezier(.2, .7, .3, 1);}
@@ -165,3 +164,20 @@ body { margin: 0; display: flex; align-items: center; justify-content: center; f
 #panel-result.is-error .badge { fill: #E5484D; }
 #panel-result.is-error .result-sub,
 #panel-result.is-error .loader-dots { display: none; }
+.panel { padding-top: 40px; }
+#panel-idle > .rounded-full { width: 60px; height: 60px; margin-bottom: 12px; }
+#panel-idle > .rounded-full svg { width: 26px; height: 26px; }
+#panel-idle > .rounded-full svg path:first-child { fill: #fff; }
+#panel-idle .heading { margin: 0 0 14px; }
+#panel-idle .try-label { margin-bottom: 8px; }
+#panel-idle .chip-grid { margin-bottom: 14px; }
+#panel-idle .speak-btn { height: 48px; }
+.sonar { width: 170px; height: 170px; margin: 4px 0 14px; }
+.sonar .mic-core { width: 84px; height: 84px; }
+.verify-label { margin-top: 18px; }
+.result-icon-wrapper { width: 100px; height: 100px; margin-bottom: 16px; }
+.loader-dot { animation: dot-fade 1.2s ease-in-out infinite; }
+@keyframes dot-fade {
+  0%, 100% { opacity: .25; transform: scale(.75); }
+  50%      { opacity: 1;   transform: scale(1); }
+}
