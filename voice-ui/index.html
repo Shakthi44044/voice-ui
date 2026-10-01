@@ -16,15 +16,15 @@
     <!-- IDLE -->
 <div class="panel flex-col items-center text-center" id="panel-idle">
   <div class="card-header w-full flex items-center justify-center mb-16px">
-    <span class="card-title font-600-16px">Voice Navigation</span>
+    <span class="card-title font-600-19px">Voice Navigation</span>
     <button class="close-btn border-0 bg-transparent cursor-pointer p-0" aria-label="Close" id="closeBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-20px h-20px text-ink-500">
+      <svg viewBox="0 0 24 24" fill="black" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-20px h-20px text-ink-500">
         <path d="M18 6 6 18M6 6l12 12"/>
       </svg>
     </button>
   </div>
   <div class="flex-center rounded-full bg-purple-600 w-72px h-72px mb-16px" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-30px h-30px">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mic-icon">
       <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/>
       <path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v3"/>
     </svg>
@@ -47,7 +47,7 @@
   </div>
   <button class="speak-btn" id="micAvatar" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mic-icon">
-      <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/>
+      <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" fill="white"/>
       <path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v3"/>
     </svg>
     <span>Tap to speak</span>
@@ -56,27 +56,27 @@
     <!-- LISTENING -->
     <div class="panel" id="panel-listening" hidden>
       <div class="card-header"><span class="card-title">Voice Navigation</span>
-        <button class="close-btn border-0 bg-transparent cursor-pointer p-0" aria-label="Close" id="closeBtn2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-20px h-20px text-ink-500"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        <button class="close-btn border-0 bg-transparent cursor-pointer p-0" aria-label="Close" id="closeBtn2"><svg viewBox="0 0 24 24" fill="black" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-20px h-20px text-ink-500"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       </div>
       <div class="sonar relative flex items-center justify-center" id="sonar">
         <div class="sonar-ring absolute rounded-full bg-purple-400 inset-0 r1"></div>
         <div class="sonar-ring absolute rounded-full bg-purple-400 inset-0 r2"></div>
         <div class="sonar-ring absolute rounded-full bg-purple-400 inset-0 r3"></div>
         <div class="mic-core relative rounded-full bg-gradient-purple flex-center shadow-avatar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
+          <svg viewBox="0 0 24 24" class="mic-icon" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" fill="white"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
         </div>
       </div>
       <h2 class="heading">Listening...</h2>
       <p class="sub-text" id="listeningSub">Please say a command</p>
       <button class="cancel-btn flex items-center gap-7px rounded-full-lg border-1-5px cursor-pointer transition-btn" id="cancelBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-14px h-14px"><path d="M18 6 6 18M6 6l12 12"/></svg>Cancel
+        <svg viewBox="0 0 24 24" fill="black" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-14px h-14px" ><path d="M18 6 6 18M6 6l12 12"/></svg>Cancel
       </button>
     </div>
 
     <!-- YOU SAID -->
     <div class="panel" id="panel-verification" hidden>
       <div class="card-header"><span class="card-title">Voice Navigation</span>
-        <button class="close-btn border-0 bg-transparent cursor-pointer p-0" aria-label="Close" id="closeBtn3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-20px h-20px text-ink-500"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        <button class="close-btn border-0 bg-transparent cursor-pointer p-0" aria-label="Close" id="closeBtn3"><svg viewBox="0 0 24 24" fill="black" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-20px h-20px text-ink-500"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       </div>
       <span class="verify-label">You said:</span>
       <p class="verify-text" id="verifyText">Show my Aadhaar</p>
@@ -93,8 +93,10 @@
 
     <!-- RESULT -->
     <div class="panel" id="panel-result" hidden>
-      <div class="card-header"><span class="card-title">Voice Navigation</span>
-        <button class="close-btn border-0 bg-transparent cursor-pointer p-0" aria-label="Close" id="closeBtn4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-20px h-20px text-ink-500"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <div>
+        <button class="close-btn border-0 bg-transparent cursor-pointer p-0" aria-label="Close" id="closeBtn4">
+          <svg viewBox="0 0 24 24" fill="black" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-20px h-20px text-ink-500">
+            <path d="M18 6 6 18M6 6l12 12"/></svg></button>
       </div>
       <div class="result-icon-wrapper flex items-center justify-center rounded-full">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -114,6 +116,5 @@
   </div>
 </div>
 <script src="script.js"></script>
-<script src="speech.js"></script>
 </body>
 </html>

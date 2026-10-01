@@ -72,59 +72,51 @@ const buildWaveform = () => {
 };
 buildWaveform();
 
+const goIdle = () => {
+  clearTimeout(timer);
+  showPanel(document.getElementById('panel-idle'));
+};
+
+const showListening = (message = 'Please say a command') => {
+  clearTimeout(timer);
+  ui.listeningSub.textContent = message;
+  showPanel(document.getElementById('panel-listening'));
+};
+const setTranscript = (text) => {
+  const transcript = (text || '').trim().replace(/[.!?,]+$/, '');
+  if (!transcript) return;
+  clearTimeout(timer);
+  lastHeardText = transcript;
+  ui.verifyText.textContent = transcript;
+  showPanel(document.getElementById('panel-verification'));
+};
+
+const showVoiceError = (message = "Didn't catch that — tap to retry") => {
+  clearTimeout(timer);
+  ui.listeningSub.textContent = message;
+  showPanel(document.getElementById('panel-listening'));
+  timer = setTimeout(goIdle, 1800);
+};
+
+window.voiceUI = { showListening, setTranscript, showVoiceError, showResult, goIdle };
+
+
 const startListening = (preset) => {
   clearTimeout(timer);
-
   if (preset) {
-    ui.listeningSub.textContent = `Heard: "${preset}"`;
-    showPanel(document.getElementById('panel-listening'));
-    timer = setTimeout(() => {
-      lastHeardText = preset;
-      ui.verifyText.textContent = preset;
-      showPanel(document.getElementById('panel-verification'));
-    }, 700);
+    showListening(`Heard: "${preset}"`);
+    timer = setTimeout(() => setTranscript(preset), 700);
     return;
   }
 
-  ui.listeningSub.textContent = 'Please say a command';
-  showPanel(document.getElementById('panel-listening'));
-  startSpeechRecognition();
+  showListening();
+  if (typeof window.onVoiceStart === 'function') window.onVoiceStart();
 };
 
-const bindSpeechCallbacks = () => {
-  window.onSpeechStart = () => {
-    ui.listeningSub.textContent = 'Please say a command';
-    showPanel(document.getElementById('panel-listening'));
-  };
-
-  window.onSpeechResult = (text) => {
-    const transcript = (text || '').trim().replace(/[.!?,]+$/, '');
-    if (!transcript) return;
-    lastHeardText = transcript;
-    ui.verifyText.textContent = transcript;
-    showPanel(document.getElementById('panel-verification'));
-  };
-
-  window.onSpeechError = (error, permissionState) => {
-    const isDenied = error === 'not-allowed' || error === 'service-not-allowed' || permissionState === 'denied';
-
-    if (error === 'not-supported') {
-      lastHeardText = 'Show my Aadhaar';
-      ui.verifyText.textContent = lastHeardText;
-      showPanel(document.getElementById('panel-verification'));
-      return;
-    }
-
-    ui.listeningSub.textContent = isDenied ? 'Microphone access denied' : "Didn't catch that — tap to retry";
-    timer = setTimeout(() => showPanel(document.getElementById('panel-idle')), 1800);
-  };
-
-  window.onSpeechEnd = () => {
-    // no-op; UI state is handled by result/verification steps
-  };
+const cancelListening = () => {
+  goIdle();
+  if (typeof window.onVoiceCancel === 'function') window.onVoiceCancel();
 };
-
-window.addEventListener('load', bindSpeechCallbacks);
 
 if (ui.micAvatar) ui.micAvatar.addEventListener('click', () => startListening(null));
 if (ui.chipGrid) ui.chipGrid.addEventListener('click', (event) => {
@@ -133,19 +125,11 @@ if (ui.chipGrid) ui.chipGrid.addEventListener('click', (event) => {
   startListening(chip.dataset.command);
 });
 
-if (ui.cancelBtn) ui.cancelBtn.addEventListener('click', () => {
-  clearTimeout(timer);
-  stopSpeechRecognition();
-  showPanel(document.getElementById('panel-idle'));
-});
-
-document.querySelectorAll('.close-btn').forEach((button) => {
-  button.addEventListener('click', () => {
-    clearTimeout(timer);
-    stopSpeechRecognition();
-    showPanel(document.getElementById('panel-idle'));
-  });
-});
+if (ui.cancelBtn) ui.cancelBtn.addEventListener('click', cancelListening);
+document.querySelectorAll('.close-btn').forEach((button) => button.addEventListener('click', cancelListening));
 
 if (ui.retryBtn) ui.retryBtn.addEventListener('click', () => startListening(null));
-if (ui.continueBtn) ui.continueBtn.addEventListener('click', () => showResult(lastHeardText));
+if (ui.continueBtn) ui.continueBtn.addEventListener('click', () => {
+  if (typeof window.onVoiceConfirm === 'function') window.onVoiceConfirm(lastHeardText);
+  showResult(lastHeardText);
+});
