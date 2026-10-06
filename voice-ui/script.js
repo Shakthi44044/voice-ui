@@ -83,7 +83,8 @@ const showListening = (message = 'Please say a command') => {
   showPanel(document.getElementById('panel-listening'));
 };
 const setTranscript = (text) => {
-  const transcript = (text || '').trim().replace(/[.!?,]+$/, '');
+  let transcript = (text || '').trim();
+  while (/[.!?,]/.test(transcript.slice(-1))) transcript = transcript.slice(0, -1);
   if (!transcript) return;
   clearTimeout(timer);
   lastHeardText = transcript;
@@ -104,7 +105,7 @@ window.voiceUI = { showListening, setTranscript, showVoiceError, showResult, goI
 const startListening = (preset) => {
   clearTimeout(timer);
   if (preset) {
-    showListening(`Heard: "${preset}"`);
+    showListening('Heard: "' + preset + '"');
     timer = setTimeout(() => setTranscript(preset), 700);
     return;
   }
