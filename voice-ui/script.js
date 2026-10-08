@@ -74,6 +74,7 @@ buildWaveform();
 
 const goIdle = () => {
   clearTimeout(timer);
+  window.voiceSpeech.stop();
   showPanel(document.getElementById('panel-idle'));
 };
 
@@ -82,28 +83,38 @@ const showListening = (message = 'Please say a command') => {
   ui.listeningSub.textContent = message;
   showPanel(document.getElementById('panel-listening'));
 };
+
 const setTranscript = (text) => {
   let transcript = (text || '').trim();
   while (/[.!?,]/.test(transcript.slice(-1))) transcript = transcript.slice(0, -1);
   if (!transcript) return;
+  window.voiceSpeech.stop();
   clearTimeout(timer);
   lastHeardText = transcript;
   ui.verifyText.textContent = transcript;
   showPanel(document.getElementById('panel-verification'));
 };
 
-const showVoiceError = (message = "Didn't catch that — tap to retry") => {
+const showVoiceError = (message = "Didn't catch that. Tap to retry") => {
   clearTimeout(timer);
   ui.listeningSub.textContent = message;
   showPanel(document.getElementById('panel-listening'));
   timer = setTimeout(goIdle, 1800);
 };
 
-window.voiceUI = { showListening, setTranscript, showVoiceError, showResult, goIdle };
-
+window.voiceUI = {
+  showListening,
+  setTranscript,
+  showVoiceError,
+  showResult,
+  goIdle,
+  stopAudioCapture: window.voiceSpeech.stop
+};
 
 const startListening = (preset) => {
   clearTimeout(timer);
+  window.voiceSpeech.stop();
+
   if (preset) {
     showListening('Heard: "' + preset + '"');
     timer = setTimeout(() => setTranscript(preset), 700);
@@ -111,15 +122,29 @@ const startListening = (preset) => {
   }
 
   showListening();
-  if (typeof window.onVoiceStart === 'function') window.onVoiceStart();
+
+  // No fixed timer here: audio-capture.js ends the session itself
+  // (5 s with no speech, or 1.2 s of silence after the user speaks).
+  window.voiceSpeech.start({
+    onError: showVoiceError,
+    onNoSpeech: () => showVoiceError("Didn't hear anything. Tap to retry"),
+    // audio-capture.js already console.logs the base64 once. API call comes later.
+    // The payload { audioBase64, mimeType, durationMs } is available here when needed.
+    onData: () => goIdle()
+  }).then((started) => {
+    if (!started) return;
+    if (typeof window.onVoiceStart === 'function') window.onVoiceStart();
+  });
 };
 
 const cancelListening = () => {
+  window.voiceSpeech.stop(); // discards any audio
   goIdle();
   if (typeof window.onVoiceCancel === 'function') window.onVoiceCancel();
 };
 
 if (ui.micAvatar) ui.micAvatar.addEventListener('click', () => startListening(null));
+
 if (ui.chipGrid) ui.chipGrid.addEventListener('click', (event) => {
   const chip = event.target.closest('.chip');
   if (!chip) return;
@@ -130,6 +155,7 @@ if (ui.cancelBtn) ui.cancelBtn.addEventListener('click', cancelListening);
 document.querySelectorAll('.close-btn').forEach((button) => button.addEventListener('click', cancelListening));
 
 if (ui.retryBtn) ui.retryBtn.addEventListener('click', () => startListening(null));
+
 if (ui.continueBtn) ui.continueBtn.addEventListener('click', () => {
   if (typeof window.onVoiceConfirm === 'function') window.onVoiceConfirm(lastHeardText);
   showResult(lastHeardText);
