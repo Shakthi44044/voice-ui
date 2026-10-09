@@ -71,16 +71,24 @@ const buildWaveform = () => {
   }
 };
 buildWaveform();
-
 const goIdle = () => {
   clearTimeout(timer);
   window.voiceSpeech.stop();
   showPanel(document.getElementById('panel-idle'));
 };
+const listeningHeading = document.querySelector('#panel-listening .heading');
+const setListeningHeading = (text) => { if (listeningHeading) listeningHeading.textContent = text; };
 
 const showListening = (message = 'Please say a command') => {
   clearTimeout(timer);
+  setListeningHeading('Listening...');
   ui.listeningSub.textContent = message;
+  showPanel(document.getElementById('panel-listening'));
+};
+const showAnalysing = () => {
+  clearTimeout(timer);
+  setListeningHeading('Analysing...');
+  ui.listeningSub.textContent = 'Please wait';
   showPanel(document.getElementById('panel-listening'));
 };
 
@@ -97,6 +105,7 @@ const setTranscript = (text) => {
 
 const showVoiceError = (message = "Didn't catch that. Tap to retry") => {
   clearTimeout(timer);
+  setListeningHeading('Listening...');
   ui.listeningSub.textContent = message;
   showPanel(document.getElementById('panel-listening'));
   timer = setTimeout(goIdle, 1800);
@@ -122,15 +131,10 @@ const startListening = (preset) => {
   }
 
   showListening();
-
-  // No fixed timer here: audio-capture.js ends the session itself
-  // (5 s with no speech, or 1.2 s of silence after the user speaks).
   window.voiceSpeech.start({
     onError: showVoiceError,
     onNoSpeech: () => showVoiceError("Didn't hear anything. Tap to retry"),
-    // audio-capture.js already console.logs the base64 once. API call comes later.
-    // The payload { audioBase64, mimeType, durationMs } is available here when needed.
-    onData: () => goIdle()
+    onData: () => showAnalysing()
   }).then((started) => {
     if (!started) return;
     if (typeof window.onVoiceStart === 'function') window.onVoiceStart();

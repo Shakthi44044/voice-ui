@@ -10,7 +10,7 @@
     checkIntervalMs: 50
   };
 
-  const aacMimeTypes = ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/aac'];
+  const aacMimeTypes = [ 'audio/webm;codecs=opus','audio/webm', 'audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/aac' ];
   let session = null;
 
   const getAacMimeType = () => {
@@ -38,7 +38,6 @@
     else s.cleanup();
   };
 
-  // Cancels the current session without emitting any audio
   const stop = () => finish(session, 'manual');
 
   const start = async ({ onError, onNoSpeech, onData } = {}) => {
