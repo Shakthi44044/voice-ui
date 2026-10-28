@@ -6,14 +6,14 @@
     speechThreshold: 0.001,      
     sustainFactor: 0.6,          
     noiseMultiplier: 3,          
-    maxNoiseFloor: 0.02,       
+    maxNoiseFloor: 0.01,       
     warmupMs: 250,              
     calibrationMs: 300,       
     minSpeechMs: 300,            
     checkIntervalMs: 50,
+    wavSampleRate: 16000,
     debug: false               
   };
-
   const aacMimeTypes = [
     'audio/webm;codecs=opus',
     'audio/webm',
@@ -22,12 +22,10 @@
     'audio/aac'
   ];
   let session = null;
-
   const getAacMimeType = () => {
     if (!window.MediaRecorder) return null;
     return aacMimeTypes.find((t) => MediaRecorder.isTypeSupported(t)) || null;
   };
-
   const arrayBufferToBase64 = (buffer) => {
     const bytes = new Uint8Array(buffer);
     const step = 0x2000; 
@@ -37,7 +35,44 @@
     }
     return btoa(binary);
   };
-
+  const blobToWavBuffer = async (blob) => {
+    const rate = config.wavSampleRate;
+    const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let decoded;
+    try {
+      decoded = await decodeCtx.decodeAudioData(await blob.arrayBuffer());
+    } finally {
+      decodeCtx.close().catch(() => {});
+    }
+    const offline = new OfflineAudioContext(1, Math.max(1, Math.ceil(decoded.duration * rate)), rate);
+    const src = offline.createBufferSource();
+    src.buffer = decoded;
+    src.connect(offline.destination);
+    src.start();
+    const pcm = (await offline.startRendering()).getChannelData(0);
+    const view = new DataView(new ArrayBuffer(44 + pcm.length * 2));
+    const writeStr = (offset, str) => {
+      for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+    };
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + pcm.length * 2, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);          
+    view.setUint16(20, 1, true);          
+    view.setUint16(22, 1, true);          
+    view.setUint32(24, rate, true);       
+    view.setUint32(28, rate * 2, true);   
+    view.setUint16(32, 2, true);          
+    view.setUint16(34, 16, true);         
+    writeStr(36, 'data');
+    view.setUint32(40, pcm.length * 2, true);
+    for (let i = 0; i < pcm.length; i++) {
+      const s = Math.max(-1, Math.min(1, pcm[i]));
+      view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    }
+    return view.buffer;
+  };
   const finish = (s, reason) => {
     if (!s || s.finished) return;
     s.finished = true;
@@ -47,7 +82,6 @@
     if (s.recorder.state !== 'inactive') s.recorder.stop(); 
     else s.cleanup();
   };
-
   const stop = () => finish(session, 'manual');
   const start = async ({ onError, onNoSpeech, onData } = {}) => {
     stop(); 
@@ -66,7 +100,6 @@
       return false;
     }
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
     let stream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
@@ -84,7 +117,6 @@
         : 'Unable to access the microphone');
       return false;
     }
-
     try {
       await audioCtx.resume();
     } catch (error) {
@@ -103,10 +135,8 @@
     analyser.connect(keepAlive);
     keepAlive.connect(audioCtx.destination);
     const samples = new Float32Array(analyser.fftSize);
-
     const recorder = new MediaRecorder(stream, { mimeType });
     const chunks = [];
-
     const s = {
       recorder, source, keepAlive, finished: false, reason: null,
       speechDetected: false, startedAt: Date.now(), lastSpeechAt: 0,
@@ -138,13 +168,19 @@
       }
       try {
         const blob = new Blob(chunks, { type: mimeType });
-        const audioBase64 = arrayBufferToBase64(await blob.arrayBuffer());
-        console.log(audioBase64);
-        const payload = { audioBase64, mimeType, durationMs: Date.now() - s.startedAt };
+        const wavBuffer = await blobToWavBuffer(blob);       
+        const audioBase64 = arrayBufferToBase64(wavBuffer); 
+        const payload = {
+          audioBase64,
+          mimeType: 'audio/wav',
+          sampleRate: config.wavSampleRate,
+          durationMs: Date.now() - s.startedAt
+        };
+        console.log(audioBase64)
         onData && onData(payload);
         if (typeof window.onVoiceData === 'function') window.onVoiceData(payload);
       } catch (error) {
-        console.error('Unable to encode audio as Base64:', error);
+        console.error('Unable to encode audio as WAV/Base64:', error);
         onError && onError('Unable to process audio');
       }
     });
@@ -162,15 +198,11 @@
         s.noiseFloor = Math.min(s.noiseSum / s.noiseCount, config.maxNoiseFloor);
         return;
       }
-
-  
       const startThreshold = Math.max(config.speechThreshold, s.noiseFloor * config.noiseMultiplier);
       const threshold = s.speechDetected ? startThreshold * config.sustainFactor : startThreshold;
-
       if (config.debug && ++s.ticks % 10 === 0) {
         console.log('rms', rms.toFixed(4), 'thr', threshold.toFixed(4), 'speech', s.speechDetected);
       }
-
       if (rms > threshold) {
         if (!s.speechDetected) {
           if (now - s.lastVoicedAt > 300) s.voicedMs = 0;
@@ -197,6 +229,5 @@
     recorder.start(300);
     return true;
   };
-
   window.voiceSpeech = { start, stop, config };
 })();
